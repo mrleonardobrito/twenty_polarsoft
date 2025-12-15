@@ -66,6 +66,40 @@ export class SignInUpService {
     private readonly dataSource: DataSource,
   ) {}
 
+  private getClientAllowlist(): string[] {
+    return this.twentyConfigService.get('CLIENT_ALLOWLIST');
+  }
+
+  private throwIfEmailIsNotAllowedByClientAllowlist(email: string): void {
+    const rawAllowlist = this.getClientAllowlist();
+    const normalizedAllowlist = (rawAllowlist ?? [])
+      .map((item) => item.trim().toLowerCase())
+      .filter((item) => item.length > 0);
+
+    if (normalizedAllowlist.length === 0) return;
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const emailDomain =
+      normalizedEmail.split('@')[1]?.trim().toLowerCase() ?? '';
+
+    const isAllowed = normalizedAllowlist.some((allowedItem) => {
+      if (allowedItem.includes('@')) {
+        return allowedItem === normalizedEmail;
+      }
+      return allowedItem === emailDomain;
+    });
+
+    if (isAllowed) return;
+
+    throw new AuthException(
+      'Sign up is not allowed for this email',
+      AuthExceptionCode.SIGNUP_NOT_ALLOWED,
+      {
+        userFriendlyMessage: msg`Sign up is restricted. Please contact your administrator.`,
+      },
+    );
+  }
+
   async computePartialUserFromUserPayload(
     newUserPayload: SignInUpNewUserPayload,
     authParams: AuthProviderWithPasswordType['authParams'],
@@ -264,6 +298,20 @@ export class SignInUpService {
         newUserWithPicture: PartialUserWithPicture;
       };
 
+      const email = userData.newUserWithPicture.email;
+
+      if (!email) {
+        throw new AuthException(
+          'Email is required',
+          AuthExceptionCode.INVALID_INPUT,
+          {
+            userFriendlyMessage: msg`Email is required`,
+          },
+        );
+      }
+
+      this.throwIfEmailIsNotAllowedByClientAllowlist(email);
+
       const user = await this.saveNewUser(userData.newUserWithPicture, {
         canAccessFullAdminPanel: false,
         canImpersonate: false,
@@ -407,6 +455,8 @@ export class SignInUpService {
   async checkWorkspaceCreationIsAllowedOrThrow(
     currentUser: UserEntity,
   ): Promise<void> {
+    this.throwIfEmailIsNotAllowedByClientAllowlist(currentUser.email);
+
     if (!this.isWorkspaceCreationLimitedToServerAdmins()) return;
 
     if (await this.isFirstWorkspaceForUser(currentUser.id)) return;
@@ -439,6 +489,8 @@ export class SignInUpService {
         },
       );
     }
+
+    this.throwIfEmailIsNotAllowedByClientAllowlist(email);
 
     const { canImpersonate, canAccessFullAdminPanel } =
       await this.setDefaultImpersonateAndAccessFullAdminPanel();
@@ -543,6 +595,8 @@ export class SignInUpService {
     newUserParams: SignInUpNewUserPayload,
     authParams: AuthProviderWithPasswordType['authParams'],
   ) {
+    this.throwIfEmailIsNotAllowedByClientAllowlist(newUserParams.email);
+
     const userExists = await this.userService.findUserByEmail(
       newUserParams.email,
     );

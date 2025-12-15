@@ -25,6 +25,7 @@ import { ServerlessDriverType } from 'src/engine/core-modules/serverless/serverl
 import { CastToLogLevelArray } from 'src/engine/core-modules/twenty-config/decorators/cast-to-log-level-array.decorator';
 import { CastToMeterDriverArray } from 'src/engine/core-modules/twenty-config/decorators/cast-to-meter-driver.decorator';
 import { CastToPositiveNumber } from 'src/engine/core-modules/twenty-config/decorators/cast-to-positive-number.decorator';
+import { CastToStringArray } from 'src/engine/core-modules/twenty-config/decorators/cast-to-string-array.decorator';
 import { CastToUpperSnakeCase } from 'src/engine/core-modules/twenty-config/decorators/cast-to-upper-snake-case.decorator';
 import { ConfigVariablesMetadata } from 'src/engine/core-modules/twenty-config/decorators/config-variables-metadata.decorator';
 import { IsAWSRegion } from 'src/engine/core-modules/twenty-config/decorators/is-aws-region.decorator';
@@ -40,6 +41,17 @@ import {
 } from 'src/engine/core-modules/twenty-config/twenty-config.exception';
 
 export class ConfigVariables {
+  @ConfigVariablesMetadata({
+    group: ConfigVariablesGroup.OTHER,
+    description:
+      'Restrict sign up and workspace creation to an allowlist of emails and/or domains. Comma-separated (e.g. alice@acme.com,acme.com).',
+    type: ConfigVariableType.ARRAY,
+    isEnvOnly: true,
+  })
+  @CastToStringArray()
+  @IsOptional()
+  CLIENT_ALLOWLIST: string[] = [];
+
   @ConfigVariablesMetadata({
     group: ConfigVariablesGroup.OTHER,
     description: 'Enable or disable password authentication for users',
