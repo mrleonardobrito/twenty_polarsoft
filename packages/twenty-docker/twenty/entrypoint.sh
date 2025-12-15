@@ -15,6 +15,9 @@ setup_and_migrate_db() {
         echo "Database appears to be empty, running migrations."
         NODE_OPTIONS="--max-old-space-size=1500" tsx ./scripts/setup-db.ts
         yarn database:migrate:prod
+    else
+        echo "Database already has core schema, applying pending migrations."
+        yarn database:migrate:prod
     fi
 
     yarn command:prod upgrade
