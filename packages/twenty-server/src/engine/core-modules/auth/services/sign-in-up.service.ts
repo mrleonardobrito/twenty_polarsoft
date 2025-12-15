@@ -76,7 +76,16 @@ export class SignInUpService {
       .map((item) => item.trim().toLowerCase())
       .filter((item) => item.length > 0);
 
-    if (normalizedAllowlist.length === 0) return;
+    // Fail closed: if allowlist is not configured, nobody can sign up or create workspaces.
+    if (normalizedAllowlist.length === 0) {
+      throw new AuthException(
+        'Sign up is disabled',
+        AuthExceptionCode.SIGNUP_DISABLED,
+        {
+          userFriendlyMessage: msg`Sign up is disabled. Please contact your administrator.`,
+        },
+      );
+    }
 
     const normalizedEmail = email.trim().toLowerCase();
     const emailDomain =
