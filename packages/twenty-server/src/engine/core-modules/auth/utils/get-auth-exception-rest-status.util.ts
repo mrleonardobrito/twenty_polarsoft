@@ -17,6 +17,8 @@ export const getAuthExceptionRestStatus = (exception: AuthException) => {
     case AuthExceptionCode.SSO_AUTH_FAILED:
     case AuthExceptionCode.USE_SSO_AUTH:
     case AuthExceptionCode.SIGNUP_DISABLED:
+    case AuthExceptionCode.SIGNUP_FORBIDDEN:
+    case AuthExceptionCode.WORKSPACE_CREATION_FORBIDDEN:
     case AuthExceptionCode.SIGNUP_NOT_ALLOWED:
     case AuthExceptionCode.GOOGLE_API_AUTH_DISABLED:
     case AuthExceptionCode.MICROSOFT_API_AUTH_DISABLED:

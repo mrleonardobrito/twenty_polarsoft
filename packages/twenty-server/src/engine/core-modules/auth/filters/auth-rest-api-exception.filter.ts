@@ -1,14 +1,14 @@
 import {
-  type ArgumentsHost,
-  Catch,
-  type ExceptionFilter,
+    type ArgumentsHost,
+    Catch,
+    type ExceptionFilter,
 } from '@nestjs/common';
 
 import { type Response } from 'express';
 
 import {
-  AuthException,
-  AuthExceptionCode,
+    AuthException,
+    AuthExceptionCode,
 } from 'src/engine/core-modules/auth/auth.exception';
 import { HttpExceptionHandlerService } from 'src/engine/core-modules/exception-handler/http-exception-handler.service';
 
@@ -47,6 +47,11 @@ export class AuthRestApiExceptionFilter implements ExceptionFilter {
           400,
         );
       case AuthExceptionCode.FORBIDDEN_EXCEPTION:
+      case AuthExceptionCode.SIGNUP_DISABLED:
+      case AuthExceptionCode.SIGNUP_FORBIDDEN:
+      case AuthExceptionCode.WORKSPACE_CREATION_FORBIDDEN:
+      case AuthExceptionCode.SIGNUP_NOT_ALLOWED:
+      case AuthExceptionCode.USER_ALREADY_EXISTS:
         return this.httpExceptionHandlerService.handleError(
           exception,
           response,
@@ -54,7 +59,6 @@ export class AuthRestApiExceptionFilter implements ExceptionFilter {
         );
       case AuthExceptionCode.GOOGLE_API_AUTH_DISABLED:
       case AuthExceptionCode.MICROSOFT_API_AUTH_DISABLED:
-      case AuthExceptionCode.SIGNUP_DISABLED:
       case AuthExceptionCode.WORKSPACE_NOT_FOUND:
         return this.httpExceptionHandlerService.handleError(
           exception,

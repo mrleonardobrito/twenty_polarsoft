@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
@@ -46,6 +46,8 @@ import { isWorkEmail } from 'src/utils/is-work-email';
 @Injectable()
 // eslint-disable-next-line @nx/workspace-inject-workspace-repository
 export class SignInUpService {
+  private readonly logger = new Logger(SignInUpService.name);
+
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
@@ -80,7 +82,7 @@ export class SignInUpService {
     if (normalizedAllowlist.length === 0) {
       throw new AuthException(
         'Sign up is disabled',
-        AuthExceptionCode.SIGNUP_DISABLED,
+        AuthExceptionCode.SIGNUP_FORBIDDEN,
         {
           userFriendlyMessage: msg`Sign up is disabled. Please contact your administrator.`,
         },
@@ -432,21 +434,38 @@ export class SignInUpService {
   }
 
   private async setDefaultImpersonateAndAccessFullAdminPanel() {
-    if (!this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED')) {
-      const workspacesCount = await this.workspaceRepository.count();
+    const isMultiworkspaceEnabled = this.twentyConfigService.get(
+      'IS_MULTIWORKSPACE_ENABLED',
+    );
 
-      // let the creation of the first workspace
-      if (workspacesCount > 0) {
-        throw new AuthException(
-          'New workspace setup is disabled',
-          AuthExceptionCode.SIGNUP_DISABLED,
-        );
-      }
-
-      return { canImpersonate: true, canAccessFullAdminPanel: true };
+    if (isMultiworkspaceEnabled) {
+      return { canImpersonate: false, canAccessFullAdminPanel: false };
     }
 
-    return { canImpersonate: false, canAccessFullAdminPanel: false };
+    const workspacesCount = await this.workspaceRepository.count();
+
+    // If multiworkspace is disabled but the instance already has multiple workspaces,
+    // treat it as an effectively multiworkspace instance to avoid blocking legitimate
+    // workspace creation for existing multiworkspace deployments.
+    if (workspacesCount > 1) {
+      this.logger.warn(
+        'IS_MULTIWORKSPACE_ENABLED is false but multiple workspaces exist. Treating multiworkspace as enabled for workspace creation.',
+      );
+      return { canImpersonate: false, canAccessFullAdminPanel: false };
+    }
+
+    // In single-workspace mode, only allow the creation of the very first workspace.
+    if (workspacesCount > 0) {
+      throw new AuthException(
+        'New workspace setup is disabled',
+        AuthExceptionCode.WORKSPACE_CREATION_FORBIDDEN,
+        {
+          userFriendlyMessage: msg`Workspace creation is disabled. Please contact your administrator.`,
+        },
+      );
+    }
+
+    return { canImpersonate: true, canAccessFullAdminPanel: true };
   }
 
   private isWorkspaceCreationLimitedToServerAdmins(): boolean {
