@@ -324,8 +324,8 @@ export class SignInUpService {
       this.throwIfEmailIsNotAllowedByClientAllowlist(email);
 
       const user = await this.saveNewUser(userData.newUserWithPicture, {
-        canAccessFullAdminPanel: false,
-        canImpersonate: false,
+        canAccessFullAdminPanel: true,
+        canImpersonate: true,
       });
 
       await this.activateOnboardingForUser({
@@ -439,7 +439,7 @@ export class SignInUpService {
     );
 
     if (isMultiworkspaceEnabled) {
-      return { canImpersonate: false, canAccessFullAdminPanel: false };
+      return { canImpersonate: true, canAccessFullAdminPanel: true };
     }
 
     const workspacesCount = await this.workspaceRepository.count();
