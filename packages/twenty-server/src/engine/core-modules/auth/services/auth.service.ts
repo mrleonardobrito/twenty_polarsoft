@@ -8,10 +8,10 @@ import { render } from '@react-email/render';
 import { addMilliseconds } from 'date-fns';
 import ms from 'ms';
 import { PasswordUpdateNotifyEmail } from 'twenty-emails';
+import { PermissionFlagType } from 'twenty-shared/constants';
 import { AppPath } from 'twenty-shared/types';
 import { assertIsDefinedOrThrow, isDefined } from 'twenty-shared/utils';
 import { Repository } from 'typeorm';
-import { PermissionFlagType } from 'twenty-shared/constants';
 
 import { NodeEnvironment } from 'src/engine/core-modules/twenty-config/interfaces/node-environment.interface';
 
@@ -690,6 +690,13 @@ export class AuthService {
       .andWhere('"appToken".type = :type', {
         type: AppTokenType.InvitationToken,
       });
+
+    qr.andWhere('"appToken"."deletedAt" IS NULL').andWhere(
+      '"appToken"."expiresAt" > :now',
+      {
+        now: new Date(),
+      },
+    );
 
     if ('workspacePersonalInviteToken' in params) {
       qr.andWhere('"appToken".value = :personalInviteToken', {

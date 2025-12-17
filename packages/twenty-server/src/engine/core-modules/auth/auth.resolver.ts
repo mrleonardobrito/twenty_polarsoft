@@ -437,14 +437,20 @@ export class AuthResolver {
       workspaceId: signUpInput.workspaceId,
     });
 
-    const invitation =
-      currentWorkspace && signUpInput.workspacePersonalInviteToken
-        ? await this.authService.findInvitationForSignInUp({
-            currentWorkspace,
-            workspacePersonalInviteToken:
-              signUpInput.workspacePersonalInviteToken,
-          })
-        : undefined;
+    const invitation = currentWorkspace
+      ? await this.authService.findInvitationForSignInUp(
+          signUpInput.workspacePersonalInviteToken
+            ? {
+                currentWorkspace,
+                workspacePersonalInviteToken:
+                  signUpInput.workspacePersonalInviteToken,
+              }
+            : {
+                currentWorkspace,
+                email: signUpInput.email,
+              },
+        )
+      : undefined;
 
     const existingUser = await this.userService.findUserByEmail(
       signUpInput.email,
