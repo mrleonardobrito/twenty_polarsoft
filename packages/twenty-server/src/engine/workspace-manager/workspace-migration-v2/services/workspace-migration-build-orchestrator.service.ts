@@ -572,6 +572,7 @@ export class WorkspaceMigrationBuildOrchestratorService {
             to: toFlatRoleTargetMaps,
             buildOptions,
             dependencyOptimisticFlatEntityMaps: {
+              flatAgentMaps: optimisticAllFlatEntityMaps.flatAgentMaps,
               flatRoleMaps: optimisticAllFlatEntityMaps.flatRoleMaps,
             },
             workspaceId,
@@ -601,7 +602,9 @@ export class WorkspaceMigrationBuildOrchestratorService {
           from: fromFlatAgentMaps,
           to: toFlatAgentMaps,
           buildOptions,
-          dependencyOptimisticFlatEntityMaps: undefined,
+          dependencyOptimisticFlatEntityMaps: {
+            flatRoleMaps: optimisticAllFlatEntityMaps.flatRoleMaps,
+          },
           workspaceId,
         });
 
@@ -650,6 +653,44 @@ export class WorkspaceMigrationBuildOrchestratorService {
       }
     }
 
+    // Page layout tabs must be processed before page layout widgets because
+    // widgets reference tabs, and the optimistic cache needs to contain the
+    // newly created tabs before widget validation runs
+    if (isDefined(flatPageLayoutTabMaps)) {
+      const { from: fromFlatPageLayoutTabMaps, to: toFlatPageLayoutTabMaps } =
+        flatPageLayoutTabMaps;
+
+      const pageLayoutTabResult =
+        this.workspaceMigrationV2PageLayoutTabActionsBuilderService.validateAndBuild(
+          {
+            from: fromFlatPageLayoutTabMaps,
+            to: toFlatPageLayoutTabMaps,
+            buildOptions,
+            dependencyOptimisticFlatEntityMaps: {
+              flatPageLayoutMaps:
+                optimisticAllFlatEntityMaps.flatPageLayoutMaps,
+            },
+            workspaceId,
+          },
+        );
+
+      this.mergeFlatEntityMapsAndRelatedFlatEntityMapsInAllFlatEntityMapsThroughMutation(
+        {
+          allFlatEntityMaps: optimisticAllFlatEntityMaps,
+          flatEntityMapsAndRelatedFlatEntityMaps:
+            pageLayoutTabResult.optimisticFlatEntityMapsAndRelatedFlatEntityMaps,
+        },
+      );
+
+      if (pageLayoutTabResult.status === 'fail') {
+        orchestratorFailureReport.pageLayoutTab.push(
+          ...pageLayoutTabResult.errors,
+        );
+      } else {
+        orchestratorActionsReport.pageLayoutTab = pageLayoutTabResult.actions;
+      }
+    }
+
     if (isDefined(flatPageLayoutWidgetMaps)) {
       const {
         from: fromFlatPageLayoutWidgetMaps,
@@ -685,41 +726,6 @@ export class WorkspaceMigrationBuildOrchestratorService {
       } else {
         orchestratorActionsReport.pageLayoutWidget =
           pageLayoutWidgetResult.actions;
-      }
-    }
-
-    if (isDefined(flatPageLayoutTabMaps)) {
-      const { from: fromFlatPageLayoutTabMaps, to: toFlatPageLayoutTabMaps } =
-        flatPageLayoutTabMaps;
-
-      const pageLayoutTabResult =
-        this.workspaceMigrationV2PageLayoutTabActionsBuilderService.validateAndBuild(
-          {
-            from: fromFlatPageLayoutTabMaps,
-            to: toFlatPageLayoutTabMaps,
-            buildOptions,
-            dependencyOptimisticFlatEntityMaps: {
-              flatPageLayoutMaps:
-                optimisticAllFlatEntityMaps.flatPageLayoutMaps,
-            },
-            workspaceId,
-          },
-        );
-
-      this.mergeFlatEntityMapsAndRelatedFlatEntityMapsInAllFlatEntityMapsThroughMutation(
-        {
-          allFlatEntityMaps: optimisticAllFlatEntityMaps,
-          flatEntityMapsAndRelatedFlatEntityMaps:
-            pageLayoutTabResult.optimisticFlatEntityMapsAndRelatedFlatEntityMaps,
-        },
-      );
-
-      if (pageLayoutTabResult.status === 'fail') {
-        orchestratorFailureReport.pageLayoutTab.push(
-          ...pageLayoutTabResult.errors,
-        );
-      } else {
-        orchestratorActionsReport.pageLayoutTab = pageLayoutTabResult.actions;
       }
     }
 
@@ -824,16 +830,16 @@ export class WorkspaceMigrationBuildOrchestratorService {
           ...aggregatedOrchestratorActionsReport.pageLayout.updated,
           ///
 
-          // Page layout widgets
-          ...aggregatedOrchestratorActionsReport.pageLayoutWidget.deleted,
-          ...aggregatedOrchestratorActionsReport.pageLayoutWidget.created,
-          ...aggregatedOrchestratorActionsReport.pageLayoutWidget.updated,
-          ///
-
           // Page layout tabs
           ...aggregatedOrchestratorActionsReport.pageLayoutTab.deleted,
           ...aggregatedOrchestratorActionsReport.pageLayoutTab.created,
           ...aggregatedOrchestratorActionsReport.pageLayoutTab.updated,
+          ///
+
+          // Page layout widgets
+          ...aggregatedOrchestratorActionsReport.pageLayoutWidget.deleted,
+          ...aggregatedOrchestratorActionsReport.pageLayoutWidget.created,
+          ...aggregatedOrchestratorActionsReport.pageLayoutWidget.updated,
           ///
         ],
         workspaceId,
