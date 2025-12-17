@@ -44,12 +44,12 @@ export class ConfigVariables {
   @ConfigVariablesMetadata({
     group: ConfigVariablesGroup.OTHER,
     description:
-      'Restrict sign up and workspace creation to an allowlist of emails and/or domains. Comma-separated (e.g. alice@acme.com,acme.com). If empty/unset, sign up and workspace creation are disabled.',
+      'Allowlist of emails and/or domains that can create workspaces. Comma-separated (e.g. alice@acme.com,acme.com). If empty/unset, workspace creation is disabled.',
     type: ConfigVariableType.ARRAY,
   })
   @CastToStringArray()
   @IsOptional()
-  CLIENT_ALLOWLIST: string[] = [];
+  ADMIN_ALLOWLIST: string[] = [];
 
   @ConfigVariablesMetadata({
     group: ConfigVariablesGroup.OTHER,
