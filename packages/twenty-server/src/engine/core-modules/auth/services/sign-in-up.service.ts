@@ -132,10 +132,10 @@ export class SignInUpService {
 
     if (isAdminAllowed) return;
 
-    const { availableWorkspacesForSignUp } =
-      await this.userWorkspaceService.findAvailableWorkspacesByEmail(email);
+    const invitations =
+      await this.workspaceInvitationService.findInvitationsByEmail(email);
 
-    if (availableWorkspacesForSignUp.length > 0) return;
+    if (invitations.length > 0) return;
 
     throw new AuthException(
       'Sign up is restricted',

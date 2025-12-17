@@ -786,15 +786,6 @@ export class AuthService {
         : userData.existingUser.email;
 
     if (
-      workspace?.approvedAccessDomains.some(
-        (trustDomain) =>
-          trustDomain.isValidated && trustDomain.domain === email.split('@')[1],
-      )
-    ) {
-      return;
-    }
-
-    if (
       hasPublicInviteLink &&
       !hasPersonalInvitation &&
       workspace &&
