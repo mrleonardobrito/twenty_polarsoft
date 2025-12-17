@@ -135,9 +135,6 @@ export const useAuth = () => {
           .getValue();
         const supportChat = snapshot.getLoadable(supportChatState).getValue();
         const captcha = snapshot.getLoadable(captchaState).getValue();
-        const clientConfigApiStatus = snapshot
-          .getLoadable(clientConfigApiStatusState)
-          .getValue();
         const isCurrentUserLoaded = snapshot
           .getLoadable(isCurrentUserLoadedState)
           .getValue();
@@ -166,7 +163,14 @@ export const useAuth = () => {
           set(apiConfigState, apiConfig);
           set(sentryConfigState, sentryConfig);
           set(workspacePublicDataState, workspacePublicData);
-          set(clientConfigApiStatusState, clientConfigApiStatus);
+          set(clientConfigApiStatusState, {
+            isLoadedOnce: false,
+            isLoading: false,
+            isErrored: false,
+            isSaved: false,
+            error: undefined,
+            data: undefined,
+          });
           set(isCurrentUserLoadedState, isCurrentUserLoaded);
           set(isMultiWorkspaceEnabledState, isMultiWorkspaceEnabled);
           set(domainConfigurationState, domainConfiguration);
