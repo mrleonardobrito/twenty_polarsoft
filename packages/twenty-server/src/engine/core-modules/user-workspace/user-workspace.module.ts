@@ -22,6 +22,7 @@ import { PermissionsModule } from 'src/engine/metadata-modules/permissions/permi
 import { RoleTargetEntity } from 'src/engine/metadata-modules/role-target/role-target.entity';
 import { UserRoleModule } from 'src/engine/metadata-modules/user-role/user-role.module';
 import { TwentyORMModule } from 'src/engine/twenty-orm/twenty-orm.module';
+import { WorkspaceCacheModule } from 'src/engine/workspace-cache/workspace-cache.module';
 import { WorkspaceDataSourceModule } from 'src/engine/workspace-datasource/workspace-datasource.module';
 
 @Module({
@@ -48,6 +49,7 @@ import { WorkspaceDataSourceModule } from 'src/engine/workspace-datasource/works
         TokenModule,
         PermissionsModule,
         OnboardingModule,
+        WorkspaceCacheModule,
       ],
       services: [UserWorkspaceService],
     }),

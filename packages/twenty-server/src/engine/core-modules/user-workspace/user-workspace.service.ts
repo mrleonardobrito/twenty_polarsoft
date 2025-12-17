@@ -34,6 +34,7 @@ import {
 import { RoleTargetEntity } from 'src/engine/metadata-modules/role-target/role-target.entity';
 import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
 import { TwentyORMGlobalManager } from 'src/engine/twenty-orm/twenty-orm-global.manager';
+import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
 import { WorkspaceMemberWorkspaceEntity } from 'src/modules/workspace-member/standard-objects/workspace-member.workspace-entity';
 import { assert } from 'src/utils/assert';
 import { getDomainNameByEmail } from 'src/utils/get-domain-name-by-email';
@@ -55,6 +56,7 @@ export class UserWorkspaceService extends TypeOrmQueryService<UserWorkspaceEntit
     private readonly fileUploadService: FileUploadService,
     private readonly fileService: FileService,
     private readonly onboardingService: OnboardingService,
+    private readonly workspaceCacheService: WorkspaceCacheService,
   ) {
     super(userWorkspaceRepository);
   }
@@ -147,7 +149,16 @@ export class UserWorkspaceService extends TypeOrmQueryService<UserWorkspaceEntit
       });
 
       await this.createWorkspaceMember(workspace.id, user);
+    }
 
+    // Ensure the user workspace has at least one role (re-invites can recreate the userWorkspace without roles due to cache / deletions)
+    const rolesOfUserWorkspace =
+      (await this.userRoleService.getRolesByUserWorkspaces({
+        userWorkspaceIds: [userWorkspace.id],
+        workspaceId: workspace.id,
+      })).get(userWorkspace.id) ?? [];
+
+    if (rolesOfUserWorkspace.length === 0) {
       const defaultRoleId = workspace.defaultRoleId;
 
       if (!isDefined(defaultRoleId)) {
@@ -163,17 +174,23 @@ export class UserWorkspaceService extends TypeOrmQueryService<UserWorkspaceEntit
         roleId: defaultRoleId,
       });
 
-      await this.workspaceInvitationService.invalidateWorkspaceInvitation(
-        workspace.id,
-        user.email,
-      );
-
-      await this.onboardingService.setOnboardingCreateProfilePending({
-        userId: user.id,
-        workspaceId: workspace.id,
-        value: true,
-      });
+      // Make sure permission caches reflect the new role assignment immediately
+      await this.workspaceCacheService.invalidateAndRecompute(workspace.id, [
+        'userWorkspaceRoleMap',
+      ]);
     }
+
+    // If the user joined via invitation, invalidate the invitation and ensure onboarding is set
+    await this.workspaceInvitationService.invalidateWorkspaceInvitation(
+      workspace.id,
+      user.email,
+    );
+
+    await this.onboardingService.setOnboardingCreateProfilePending({
+      userId: user.id,
+      workspaceId: workspace.id,
+      value: true,
+    });
   }
 
   public async getUserCount(workspaceId: string): Promise<number | undefined> {
