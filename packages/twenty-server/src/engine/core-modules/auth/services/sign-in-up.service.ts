@@ -78,8 +78,7 @@ export class SignInUpService {
       .map((item) => item.trim().toLowerCase())
       .filter((item) => item.length > 0);
 
-    // Fail closed: if allowlist is not configured, nobody can sign up or create workspaces.
-    if (normalizedAllowlist.length === 0) {
+   if (normalizedAllowlist.length === 0) {
       throw new AuthException(
         'Sign up is disabled',
         AuthExceptionCode.SIGNUP_FORBIDDEN,
@@ -324,8 +323,8 @@ export class SignInUpService {
       this.throwIfEmailIsNotAllowedByClientAllowlist(email);
 
       const user = await this.saveNewUser(userData.newUserWithPicture, {
-        canAccessFullAdminPanel: true,
-        canImpersonate: true,
+        canAccessFullAdminPanel: false,
+        canImpersonate: false,
       });
 
       await this.activateOnboardingForUser({
@@ -444,9 +443,6 @@ export class SignInUpService {
 
     const workspacesCount = await this.workspaceRepository.count();
 
-    // If multiworkspace is disabled but the instance already has multiple workspaces,
-    // treat it as an effectively multiworkspace instance to avoid blocking legitimate
-    // workspace creation for existing multiworkspace deployments.
     if (workspacesCount > 1) {
       this.logger.warn(
         'IS_MULTIWORKSPACE_ENABLED is false but multiple workspaces exist. Treating multiworkspace as enabled for workspace creation.',
@@ -454,7 +450,6 @@ export class SignInUpService {
       return { canImpersonate: false, canAccessFullAdminPanel: false };
     }
 
-    // In single-workspace mode, only allow the creation of the very first workspace.
     if (workspacesCount > 0) {
       throw new AuthException(
         'New workspace setup is disabled',
