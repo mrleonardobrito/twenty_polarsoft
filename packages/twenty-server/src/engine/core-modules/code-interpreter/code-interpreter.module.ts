@@ -8,6 +8,7 @@ import {
 import { CodeInterpreterService } from './code-interpreter.service';
 
 import { E2BDriver } from './drivers/e2b.driver';
+import { DisabledDriver } from './drivers/disabled.driver';
 import { LocalDriver } from './drivers/local.driver';
 
 @Global()
@@ -20,9 +21,14 @@ export class CodeInterpreterModule {
       useFactory: async (...args: unknown[]) => {
         const config = await options.useFactory(...args);
 
-        return config.type === CodeInterpreterDriverType.LOCAL
-          ? new LocalDriver(config.options)
-          : new E2BDriver(config.options);
+        switch (config.type) {
+          case CodeInterpreterDriverType.LOCAL:
+            return new LocalDriver(config.options);
+          case CodeInterpreterDriverType.E_2_B:
+            return new E2BDriver(config.options);
+          case CodeInterpreterDriverType.DISABLED:
+            return new DisabledDriver(config.options);
+        }
       },
       inject: options.inject ?? [],
     };

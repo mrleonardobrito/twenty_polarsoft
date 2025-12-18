@@ -540,7 +540,7 @@ export class ConfigVariables {
   @ConfigVariablesMetadata({
     group: ConfigVariablesGroup.CODE_INTERPRETER_CONFIG,
     description:
-      'Code interpreter driver type - LOCAL for development (unsafe), E2B for sandboxed execution',
+      'Code interpreter driver type - LOCAL for development (unsafe), E2B for sandboxed execution, DISABLED to turn it off',
     type: ConfigVariableType.STRING,
     options: Object.values(CodeInterpreterDriverType),
     isEnvOnly: true,
