@@ -1,0 +1,29 @@
+name: Deploy AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to AWS with EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USER }}
+            key: ${{ secrets.SSH_KEY }}
+            port: ${{ secrets.SSH_PORT || 22 }}
+            script: |
+                cd ~/twenty_polarsoft
+                docker pull ${{ env.IMAGE_NAME }}:latest
+                docker compose pull
+                docker compose up -d --remove-orphans
+                docker system prune -f
