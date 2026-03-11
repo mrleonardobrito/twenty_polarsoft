@@ -17,15 +17,21 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}  # secret já deve ter valor padrão definido
           script: |
             set -euo pipefail  # falha rápido em qualquer erro
 
             cd ~/twenty_polarsoft
+
+            # Salva imagem atual para rollback
             PREVIOUS_IMAGE=$(docker compose images -q server | head -1)
-            docker compose pull
+
+            # Pull da nova imagem
+            docker pull ${{ env.IMAGE_NAME }}:latest
+
+            # Deploy com restart ordenado (menos downtime)
             docker compose up -d --remove-orphans --wait
 
+            # Health check explícito
             echo "Aguardando health check..."
             for i in $(seq 1 12); do
               if docker compose ps | grep -q "healthy"; then
